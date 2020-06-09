@@ -1,59 +1,76 @@
 package com.example.ppe4;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
+public class MainActivity extends AppCompatActivity implements TaskComplete {
 
-public class MainActivity extends AppCompatActivity {
-        private EditText login;
-        private EditText motdepasse;
-        private Button valider;
-        private Button inscription;
-        private RadioButton visiteur,comptable;
+    private EditText login, mdp;
+    private RadioButton visiteur, comptable;
+    private Button submit;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        getSupportActionBar().hide(); //hide the title bar
+
 
         login = findViewById(R.id.log);
-        motdepasse = findViewById(R.id.mdp);
-        valider = findViewById(R.id.val);
-        valider.setText("Valider");
-        inscription = findViewById(R.id.ins);
-        inscription.setText("Inscription");
+        mdp = findViewById(R.id.mdp);
         visiteur = findViewById(R.id.visiteur);
         comptable = findViewById(R.id.comptable);
+        submit = findViewById(R.id.val);
 
-        valider.setOnClickListener(new View.OnClickListener() {
+
+        submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String logincontent = login.getText().toString();
-                String mdpcontent = motdepasse.getText().toString();
+                String mdpcontent = mdp.getText().toString();
+                String type = "";
+
                 if(visiteur.isChecked()){
-                    gotoUrl("http://mcol.myqnapcloud.com/PPE4/api.php?mode=login&login="+logincontent+"&mdp="+mdpcontent+"&type=visiteur");
+                    type = "visiteur";
                 }else if(comptable.isChecked()){
-                    gotoUrl("http://mcol.myqnapcloud.com/PPE4/api.php?mode=login&login="+logincontent+"&mdp="+mdpcontent+"&type=comptable");
+                    type = "comptable";
                 }
-                Intent i = new Intent(MainActivity.this, Accueil.class);
-                startActivity(i);
-                finish();
 
+                RequestByURL req = new RequestByURL(MainActivity.this);
 
+                req.execute("http://mcol.myqnapcloud.com/PPE4/api.php?mode=login&login="+logincontent+"&mdp="+mdpcontent+"&type="+type);
             }
-
         });
 
-
     }
-    public void gotoUrl(final String url){
-        RequestByURL req = new RequestByURL();
-        req.execute(url);
+
+    @Override
+    public void complete(String value) {
+        if(value.equals("match")){
+            final SharedPreferences user = getSharedPreferences("user", Context.MODE_PRIVATE);
+            final SharedPreferences.Editor editor = user.edit();
+            editor.putString("login", login.getText().toString());
+            editor.putString("mdp", mdp.getText().toString());
+            editor.apply();
+            Toast.makeText(MainActivity.this, "Vous êtes connecté "+login.getText().toString(), Toast.LENGTH_SHORT).show();
+            Intent i = new Intent(MainActivity.this, Accueil.class);
+            startActivity(i);
+
+            finish();
+        }else{
+            Toast.makeText(MainActivity.this, "Identifiant incorrect", Toast.LENGTH_SHORT).show();
+
+        }
     }
 }

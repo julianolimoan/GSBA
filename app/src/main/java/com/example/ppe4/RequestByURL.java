@@ -12,6 +12,8 @@ import java.net.URL;
 
 public class RequestByURL extends AsyncTask <String, Void, String> {
 
+    private TaskComplete listener;
+
     @Override
     protected String doInBackground(String... urlParam) {
         try {
@@ -21,6 +23,7 @@ public class RequestByURL extends AsyncTask <String, Void, String> {
             con.connect();
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String result = bufferedReader.readLine();
+            Log.d("Result", result);
             return result;
         } catch (Exception e) {
             return null;
@@ -34,7 +37,12 @@ public class RequestByURL extends AsyncTask <String, Void, String> {
 
     @Override
     protected void onPostExecute(String result) {
-        Log.d("Result", result);
+        super.onPostExecute(result);
+        this.listener.complete(result);
+    }
+
+    public RequestByURL(TaskComplete t){
+        this.listener = t;
     }
 
 }
